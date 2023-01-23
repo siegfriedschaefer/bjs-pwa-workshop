@@ -24,6 +24,11 @@ type Config = {
 };
 
 export function register(config?: Config) {
+  // Beware of process.env.NODE_ENV
+  // It can't be set manually
+  // https://create-react-app.dev/docs/adding-custom-environment-variables/
+
+
   if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
     const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
