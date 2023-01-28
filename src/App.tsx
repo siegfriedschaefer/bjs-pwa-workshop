@@ -20,52 +20,9 @@ import { WebXRSessionManager,
   WebXRExperienceHelper,
  } from '@babylonjs/core/XR';
 
- import { useEffect, useRef } from "react";
- 
- /*
-  ({ antialias, engineOptions, adaptToDeviceRatio, sceneOptions, onRender, onSceneReady, ...rest }) => {
-   const reactCanvas = useRef(null);
- 
-   // set up basic engine and scene
-   useEffect(() => {
-     const { current: canvas } = reactCanvas;
- 
-     if (!canvas) return;
- 
-     const engine = new Engine(canvas, antialias, engineOptions, adaptToDeviceRatio);
-     const scene = new Scene(engine, sceneOptions);
-     if (scene.isReady()) {
-       onSceneReady(scene);
-     } else {
-       scene.onReadyObservable.addOnce((scene) => onSceneReady(scene));
-     }
- 
-     engine.runRenderLoop(() => {
-       if (typeof onRender === "function") onRender(scene);
-       scene.render();
-     });
- 
-     const resize = () => {
-       scene.getEngine().resize();
-     };
- 
-     if (window) {
-       window.addEventListener("resize", resize);
-     }
- 
-     return () => {
-       scene.getEngine().dispose();
- 
-       if (window) {
-         window.removeEventListener("resize", resize);
-       }
-     };
-   }, [antialias, engineOptions, adaptToDeviceRatio, sceneOptions, onRender, onSceneReady]);
- 
-   return <canvas ref={reactCanvas} {...rest} />;
- };
-*/
+import { useEffect, useRef } from "react";
 
+// Test screen, just to see something
 function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
 
   // Create the scene space
@@ -83,13 +40,14 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
   // Add and manipulate meshes in the scene
   var sphere = MeshBuilder.CreateSphere("sphere", {diameter:3}, scene);
   sphere.position.y = 1;
-//  var ground = MeshBuilder.CreateGround("ground", {width:50, height:100}, scene);
 
   return scene;
 
 };
 
+
 async function getwebxr(scene: Scene) {
+
   try {
     const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
   } catch (e) {
@@ -98,42 +56,35 @@ async function getwebxr(scene: Scene) {
   }  
 }
 
+const BabylonView: FC = () => {
 
-type WithVRProps = {
-  xrstate: boolean;
-}
-
-const WithVR: FC<WithVRProps> = (props) => {
-
-  const [xrSession, setXrSession] = useState<WebXRSessionManager>();
   const [xrScene, setXrScene] = useState<Scene>();
-
-  const [rotationY, setRotationY] = useState(Math.PI);
-  const { xrstate } = props;
+  const [xrEngine, setXrEngine] = useState<Engine>();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    console.log("useEffect");
 
     const canvas = canvasRef.current;
     if (canvas === null) return;
 
+    // Fullpage support
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
- 
   
     const engine = new Engine(canvas, true);
-    console.log(engine);
+    setXrEngine(engine);
 
     var scene: Scene = createScene(engine, canvas);
     setXrScene(scene);
 
-    engine.runRenderLoop(function () { // Register a render loop to repeatedly render the scene
+    // Register a render loop to repeatedly render the scene
+    engine.runRenderLoop(function () {
       scene.render();
     });
 
-    window.addEventListener("resize", function () { // Watch for browser/canvas resize events
+    // Watch for browser/canvas resize events
+    window.addEventListener("resize", function () {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
         engine.resize();
@@ -142,24 +93,6 @@ const WithVR: FC<WithVRProps> = (props) => {
   //   getwebxr(scene);
   }, []);
 
-
-/*
-  (async () => {
-    if (xrSession) {
-      await xrSession.exitXRAsync();
-      if (root !== undefined)
-        root.setEnabled(false);
-    } else {
-      if (scene !== null) {
-
-        const xr = await scene.getEngine().createDefaultXRExperienceAsync({
-          disableDefaultUI: true,
-          disableTeleportation: true,
-        });
-      }
-    }
-  });
-*/
   const onToggleXR = () => {
     if (xrScene !== undefined)
       xrScene.getEngine().switchFullscreen(false);
@@ -175,40 +108,12 @@ const WithVR: FC<WithVRProps> = (props) => {
   );
 }
 
-
-
-/*
-const App = () => {
-  const [xrstate, setxrstate] = useState(true);
-  const onToggleXR = () => {
-    setxrstate((current) => !current)
-  }
-
+function App() {
   return (
     <>
-   <div style={{ flex: 1, display: 'flex' }}>
-        <button className="btn btn-primary" onClick={onToggleXR}>
-          XR On/Off
-        </button>
-      </div>
-      <div style={{ flex: 1, display: 'flex' }}>
-        <WithVR xrstate={xrstate} />
-      </div>
+      <BabylonView />
     </>
-  );
-};
-*/
-
-function App() {
-  const [xrstate, setxrstate] = useState(true);
-
-  return (
-    <div style={{ flex: 1}}>
-      <div style={{ flex: 1 }}>
-          <WithVR xrstate={xrstate} />
-      </div>
-    </div>
-  );
+  )
 }
 
 export default App;
