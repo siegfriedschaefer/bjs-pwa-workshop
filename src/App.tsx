@@ -7,7 +7,8 @@ import {Engine,
         HemisphericLight,
         MeshBuilder,
         PointLight,
-        Scene} from '@babylonjs/core';
+        Scene,
+      FreeCamera} from '@babylonjs/core';
 
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import {ArcRotateCamera} from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -27,8 +28,15 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
 
   // Create the scene space
   var scene = new Scene(engine);
+  scene.createDefaultEnvironment({ createGround: false, createSkybox: false });
+//  getwebxr(scene);  
+
 
   // Add a camera to the scene and attach it to the canvas
+
+  // var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);
+  // camera.setTarget(Vector3.Zero());
+
   var camera = new ArcRotateCamera("Camera", Math.PI / 2, 15 * Math.PI / 32, 25, Vector3.Zero(), scene);
   camera.attachControl(canvas, true);
 
@@ -38,8 +46,12 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
 
 
   // Add and manipulate meshes in the scene
-  var sphere = MeshBuilder.CreateSphere("sphere", {diameter:3}, scene);
-  sphere.position.y = 1;
+  var sphere = MeshBuilder.CreateSphere("sphere", {diameter:10}, scene);
+  sphere.position.y = -5;
+  sphere.position.x = -5;
+  sphere.position.z = 1;
+
+  getwebxr(scene);  
 
   return scene;
 
@@ -49,7 +61,29 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
 async function getwebxr(scene: Scene) {
 
   try {
-    const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
+//    const env = scene.createDefaultEnvironment();
+
+//    if ((env !== null) && (env.ground !== null)) {
+      console.log("XR enabled");
+      const xr = await scene.createDefaultXRExperienceAsync({
+//        disableDefaultUI: true,
+        disableTeleportation: true,
+//        floorMeshes: [env.ground],
+        uiOptions: {
+          sessionMode: "immersive-ar",
+        },
+//        optionalFeatures: true
+        optionalFeatures: ["hit-test", "anchors"],
+      });
+/*
+      const session = await xr.baseExperience.enterXRAsync(
+        'immersive-ar',
+        'unbounded',
+        xr.renderTarget,
+      );
+*/
+//    }
+//     const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
   } catch (e) {
       // no XR support
       console.log('no WebXr support');
@@ -76,27 +110,28 @@ const BabylonView: FC = () => {
     setXrEngine(engine);
 
     var scene: Scene = createScene(engine, canvas);
-    setXrScene(scene);
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {
+//      console.log('.');
       scene.render();
     });
+    setXrScene(scene);
 
-    // Watch for browser/canvas resize events
+  // Watch for browser/canvas resize events
     window.addEventListener("resize", function () {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
         engine.resize();
     });
   
-  //   getwebxr(scene);
   }, []);
 
   const onToggleXR = () => {
-    if (xrScene !== undefined)
-      xrScene.getEngine().switchFullscreen(false);
-  }
+    if (xrScene !== undefined) {
+//      xrScene.getEngine().switchFullscreen(false);
+    }
+}
 
   return (
     <>
