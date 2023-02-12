@@ -29,16 +29,14 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
   // Create the scene space
   var scene = new Scene(engine);
   scene.createDefaultEnvironment({ createGround: false, createSkybox: false });
-//  getwebxr(scene);  
-
 
   // Add a camera to the scene and attach it to the canvas
 
-  // var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);
-  // camera.setTarget(Vector3.Zero());
+  var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);
+  camera.setTarget(Vector3.Zero());
 
-  var camera = new ArcRotateCamera("Camera", Math.PI / 2, 15 * Math.PI / 32, 25, Vector3.Zero(), scene);
-  camera.attachControl(canvas, true);
+  // var camera = new ArcRotateCamera("Camera", Math.PI / 2, 15 * Math.PI / 32, 25, Vector3.Zero(), scene);
+  // camera.attachControl(canvas, true);
 
   // Add lights to the scene
   var light1 = new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
@@ -46,19 +44,18 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
 
 
   // Add and manipulate meshes in the scene
-  var sphere = MeshBuilder.CreateSphere("sphere", {diameter:10}, scene);
-  sphere.position.y = -5;
-  sphere.position.x = -5;
-  sphere.position.z = 1;
+  var sphere = MeshBuilder.CreateSphere("sphere", {diameter:2}, scene);
+  sphere.position.y = 2;
+  sphere.position.x = 0;
+  sphere.position.z = 4;
 
-  getwebxr(scene);  
+  activateWebXR(scene);  
 
   return scene;
 
 };
 
-
-async function getwebxr(scene: Scene) {
+async function activateWebXR(scene: Scene) {
 
   try {
 //    const env = scene.createDefaultEnvironment();
@@ -75,15 +72,7 @@ async function getwebxr(scene: Scene) {
 //        optionalFeatures: true
         optionalFeatures: ["hit-test", "anchors"],
       });
-/*
-      const session = await xr.baseExperience.enterXRAsync(
-        'immersive-ar',
-        'unbounded',
-        xr.renderTarget,
-      );
-*/
-//    }
-//     const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
+
   } catch (e) {
       // no XR support
       console.log('no WebXr support');
