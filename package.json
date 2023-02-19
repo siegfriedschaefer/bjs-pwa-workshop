@@ -5,6 +5,7 @@
   "dependencies": {
     "@babylonjs/core": "^5.43.1",
     "@babylonjs/gui": "^5.43.1",
+    "@babylonjs/loaders": "^5.47.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
