@@ -3,12 +3,18 @@ import { FC, useState } from 'react';
 import logo from './logo.png';
 import './App.css';
 // import { Engine, Scene, useScene } from 'react-babylonjs';
-import {Engine,
+import {AbstractMesh,
+        Axis,
+        Engine,
         HemisphericLight,
         MeshBuilder,
         PointLight,
         Scene,
-      FreeCamera} from '@babylonjs/core';
+        Space,
+      FreeCamera,
+    SceneLoader} from '@babylonjs/core';
+
+import '@babylonjs/loaders/glTF';
 
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import {ArcRotateCamera} from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -24,8 +30,32 @@ import { WebXRSessionManager,
 import { useEffect, useRef } from "react";
 
 // Test screen, just to see something
-function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
+function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene  {
 
+  let item: AbstractMesh;
+
+  const loadmesh = async (scene: Scene) => {
+
+    const model = await SceneLoader.ImportMeshAsync("", "https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/", "toolbox.glb", scene);
+
+    item = model.meshes[0];
+//    item.scaling.scaleInPlace(1.0);
+    item.rotate(Axis.X, -Math.PI/0.5, Space.LOCAL);
+    item.translate(new Vector3(2, 0, 4), 2 );
+
+    /*
+    // load animations from glTF
+    const fanRunning = scene.getAnimationGroupByName("fanRunning");
+
+    // Stop all animations to make sure the asset it ready
+    scene.stopAllAnimations();
+    
+    // run the fanRunning animation
+    if (fanRunning !== null)
+      fanRunning.start(true);
+    */
+};
+   
   // Create the scene space
   var scene = new Scene(engine);
   scene.createDefaultEnvironment({ createGround: false, createSkybox: false });
@@ -42,12 +72,15 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
   var light1 = new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
   var light2 = new PointLight("Omni0", new Vector3(0, 1, -1), scene);
 
-
+/*
   // Add and manipulate meshes in the scene
   var sphere = MeshBuilder.CreateSphere("sphere", {diameter:2}, scene);
   sphere.position.y = 2;
   sphere.position.x = 0;
   sphere.position.z = 4;
+*/
+
+  loadmesh(scene);
 
   activateWebXR(scene);  
 
@@ -58,21 +91,12 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene {
 async function activateWebXR(scene: Scene) {
 
   try {
-//    const env = scene.createDefaultEnvironment();
-
-//    if ((env !== null) && (env.ground !== null)) {
-      console.log("XR enabled");
       const xr = await scene.createDefaultXRExperienceAsync({
-//        disableDefaultUI: true,
-        disableTeleportation: true,
-//        floorMeshes: [env.ground],
         uiOptions: {
           sessionMode: "immersive-ar",
         },
-//        optionalFeatures: true
         optionalFeatures: ["hit-test", "anchors"],
       });
-
   } catch (e) {
       // no XR support
       console.log('no WebXr support');
@@ -80,6 +104,8 @@ async function activateWebXR(scene: Scene) {
 }
 
 const BabylonView: FC = () => {
+
+  let item: AbstractMesh;
 
   const [xrScene, setXrScene] = useState<Scene>();
   const [xrEngine, setXrEngine] = useState<Engine>();
@@ -98,11 +124,12 @@ const BabylonView: FC = () => {
     const engine = new Engine(canvas, true);
     setXrEngine(engine);
 
-    var scene: Scene = createScene(engine, canvas);
+    var scene: Scene;
+
+    scene = createScene(engine, canvas);
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {
-//      console.log('.');
       scene.render();
     });
     setXrScene(scene);
