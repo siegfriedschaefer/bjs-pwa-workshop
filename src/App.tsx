@@ -39,10 +39,11 @@ import { WebXRSessionManager,
 
 import { useEffect, useRef } from "react";
 
+let item: AbstractMesh | undefined;
+
 // Test screen, just to see something
 function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene  {
 
-  let item: AbstractMesh;
 
   const loadmesh = async (scene: Scene) => {
 
@@ -92,6 +93,10 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene  {
 
 async function activateWebXR(scene: Scene) {
 
+  let placementIndicator: AbstractMesh;
+  var modelPlaced: boolean = false;
+
+
   try {
       const xr = await scene.createDefaultXRExperienceAsync({
         uiOptions: {
@@ -102,31 +107,47 @@ async function activateWebXR(scene: Scene) {
       const fm = xr.baseExperience.featuresManager;
 
       const hitTest = fm.enableFeature(WebXRHitTest, 'latest') as WebXRHitTest;
-      var dot = MeshBuilder.CreateSphere("sphere", {diameter:0.05}, scene);
-      dot.isVisible = false;
+
+      placementIndicator = MeshBuilder.CreateTorus("torus", {thickness: 0.01, diameter: 0.1, tessellation: 64}, scene);
+      var indicatorMat = new StandardMaterial('noLight', scene);
+      indicatorMat.disableLighting = true;
+      indicatorMat.emissiveColor = Color3.White();
+      placementIndicator.material = indicatorMat;
+      placementIndicator.scaling = new Vector3(1, 0.01, 1);
+      placementIndicator.setEnabled(false);
 
       hitTest.onHitTestResultObservable.add((results) => {
         if (results.length) {
-          const t1 : Quaternion = dot.rotationQuaternion as Quaternion;
-          dot.isVisible = true;
-          results[0].transformationMatrix.decompose(dot.scaling, t1, dot.position);
+          if (!modelPlaced) {
+            placementIndicator.setEnabled(true);
+//            placementIndicator.isVisible = false;
+          }
+          else {
+//            placementIndicator.setEnabled(false);
+          }
+
+          if (placementIndicator) {
+            placementIndicator.position = results[0].position;
+            modelPlaced = true;
+            if (item !== undefined) {
+              item.rotationQuaternion = Quaternion.Identity();
+//              placementIndicator.setEnabled(false);
+              item.setEnabled(true);
+              item.position = placementIndicator.position.clone();
+              item.scalingDeterminant = 0.2;
+            }
+          }
         } else {
-          dot.isVisible = false;
+          placementIndicator.setEnabled(false);
         }
       });
 
-/*
-      // Biggest problem: How to solve lifecycle of objects?
-      // I have no idea (yet) where playnes should be located and how to solve this in a good manner.
-*/
+      const planeDetector = fm.enableFeature(WebXRPlaneDetector, "latest") as WebXRPlaneDetector;
       const planes: any[] = [];
 
-      const planeDetector = fm.enableFeature(WebXRPlaneDetector, "latest") as WebXRPlaneDetector;
-//      const planeDetector = fm.enableFeature(WebXRFeatureName.PLANE_DETECTION, "latest") as WebXRPlaneDetector;
-    
-
       planeDetector.onPlaneUpdatedObservable.add(webXRPlane => {
-        console.log("Update");
+
+        // we have to transform the plane's type because of typescript complaining if not
         let plane : any = webXRPlane;
         if (plane.mesh) {
             plane.mesh.dispose(false, false);
@@ -161,8 +182,7 @@ async function activateWebXR(scene: Scene) {
       });
 
       planeDetector.onPlaneAddedObservable.add(webxrplane => {
-        console.log("Add");
-        
+
         // we have to transform the plane's type because of typescript complaining if not
         let plane: any = webxrplane;
 
@@ -178,7 +198,6 @@ async function activateWebXR(scene: Scene) {
           mat.alpha = 0.5;
           mat.diffuseColor = Color3.Random();
 
-  
           plane.mesh.material = mat;
 
           plane.mesh.rotationQuaternion = new Quaternion();
@@ -188,32 +207,10 @@ async function activateWebXR(scene: Scene) {
         {
           console.error(ex);
         }
-
-/*
-        var polygon_triangulation = new PolygonMeshBuilder("name", plane.polygonDefinition.map((p: Vector3) => new Vector2(p.x, p.z)), scene);
-        var polygon = polygon_triangulation.build(false, 0.01);
-
-        plane.mesh = polygon;
-
-        planes[plane.id] = plane.mesh;
-
-        const mat = new StandardMaterial("mat", scene);
-        mat.alpha = 0.5;
-        // pick a random color
-        mat.diffuseColor = Color3.Random();
-        polygon.createNormals(true);
-
-        plane.mesh.material = mat;
-        plane.mesh.rotationQuaternion = new Quaternion();
-        plane.transformationMatrix.decompose(plane.mesh.scaling, plane.mesh.rotationQuaternion, plane.mesh.position);
-        plane.mesh.material = mat;
-*/
       });
       
       planeDetector.onPlaneRemovedObservable.add(plane => {
         if (plane && planes[plane.id]) {
-          console.log("Dispose");
-
             planes[plane.id].dispose()
         }
       })
