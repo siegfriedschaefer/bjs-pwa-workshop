@@ -33,57 +33,69 @@ import { WebXRSessionManager,
   WebXRFeatureName, 
   WebXRFeaturesManager,
   WebXRExperienceHelper,
+  WebXRCamera,
   WebXRHitTest,
-  WebXRPlaneDetector
+  WebXRState,
+  WebXRPlaneDetector,
+  WebXRAnchorSystem,
+  IWebXRHitResult
  } from '@babylonjs/core/XR';
 
 import { useEffect, useRef } from "react";
 
 let item: AbstractMesh | undefined;
+let item2: AbstractMesh | undefined;
+let item3: AbstractMesh | undefined;
+
+const loadmodel = async (scene: Scene) => {
+
+  const model = await SceneLoader.ImportMeshAsync("", "https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/", "toolbox.glb", scene);
+
+  item = model.meshes[0];
+  item2 = model.meshes[1];
+  item3 = model.meshes[2];
+
+  item.setEnabled(false);
+  item.scaling.scaleInPlace(0.2);
+
+//  model.meshes[0].setEnabled(false);
+//  model.meshes[1].setEnabled(false);
+//  model.meshes[2].setEnabled(false);
+
+  /*
+  // load animations from glTF
+  const fanRunning = scene.getAnimationGroupByName("fanRunning");
+
+  // Stop all animations to make sure the asset it ready
+  scene.stopAllAnimations();
+  
+  // run the fanRunning animation
+  if (fanRunning !== null)
+    fanRunning.start(true);
+  */
+};
+
+
 
 // Test screen, just to see something
 function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene  {
-
-
-  const loadmesh = async (scene: Scene) => {
-
-    const model = await SceneLoader.ImportMeshAsync("", "https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/", "toolbox.glb", scene);
-
-    item = model.meshes[0];
-//    item.scaling.scaleInPlace(1.0);
-    item.rotate(Axis.X, -Math.PI/0.5, Space.LOCAL);
-    item.translate(new Vector3(2, 0, 4), 2 );
-
-    /*
-    // load animations from glTF
-    const fanRunning = scene.getAnimationGroupByName("fanRunning");
-
-    // Stop all animations to make sure the asset it ready
-    scene.stopAllAnimations();
-    
-    // run the fanRunning animation
-    if (fanRunning !== null)
-      fanRunning.start(true);
-    */
-  };
    
   // Create the scene space
   var scene = new Scene(engine);
   scene.createDefaultEnvironment({ createGround: false, createSkybox: false });
 
   // Add a camera to the scene and attach it to the canvas
-
-  var camera = new FreeCamera("camera1", new Vector3(0, 5, -10), scene);
+  var camera = new FreeCamera("camera1", new Vector3(0, 2, -10), scene);
   camera.setTarget(Vector3.Zero());
 
   // var camera = new ArcRotateCamera("Camera", Math.PI / 2, 15 * Math.PI / 32, 25, Vector3.Zero(), scene);
-  // camera.attachControl(canvas, true);
+  camera.attachControl(canvas, true);
 
   // Add lights to the scene
-  var light1 = new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
-  var light2 = new PointLight("Omni0", new Vector3(0, 1, -1), scene);
+  // var light2 = new PointLight("Omni0", new Vector3(0, 1, -1), scene);
+  var light1 = new HemisphericLight("light1", new Vector3(0, 3, 0), scene);
 
-  loadmesh(scene);
+  // var sphere = MeshBuilder.CreateSphere("sphere", {}, scene);
 
   activateWebXR(scene);  
 
@@ -95,15 +107,32 @@ async function activateWebXR(scene: Scene) {
 
   let placementIndicator: AbstractMesh;
   var modelPlaced: boolean = false;
+  var hitpoint : IWebXRHitResult ;
 
+  const sessionManager = new WebXRSessionManager(scene);
+  const supported = await sessionManager.isSessionSupportedAsync('immersive-ar');
+  if (!supported) {
+    return;
+  }
 
   try {
       const xr = await scene.createDefaultXRExperienceAsync({
         uiOptions: {
           sessionMode: "immersive-ar",
         },
-        optionalFeatures: ["hit-test", "anchors"],
+        optionalFeatures: ["hit-test", "anchors","unbounded"],
       });
+
+      if (!xr.baseExperience) {
+        return;
+      }
+
+      // Loading the model after setting up the XR-Experience helps to get rif of some
+      // wired rendering effects like unusual, but happening when loading before the setup, black box effects.
+      loadmodel(scene);
+
+      // var xrSession = xr.baseExperience.sessionManager;
+
       const fm = xr.baseExperience.featuresManager;
 
       const hitTest = fm.enableFeature(WebXRHitTest, 'latest') as WebXRHitTest;
@@ -127,7 +156,12 @@ async function activateWebXR(scene: Scene) {
           }
 
           if (placementIndicator) {
+
+            hitpoint = results[0];
+            let quat: Quaternion = placementIndicator.rotationQuaternion as Quaternion;
+            hitpoint.transformationMatrix.decompose(placementIndicator.scaling, quat, placementIndicator.position);
             placementIndicator.position = results[0].position;
+/*
             modelPlaced = true;
             if (item !== undefined) {
               item.rotationQuaternion = Quaternion.Identity();
@@ -136,6 +170,7 @@ async function activateWebXR(scene: Scene) {
               item.position = placementIndicator.position.clone();
               item.scalingDeterminant = 0.2;
             }
+*/
           }
         } else {
           placementIndicator.setEnabled(false);
@@ -215,6 +250,43 @@ async function activateWebXR(scene: Scene) {
         }
       })
 
+      const anchorSystem = fm.enableFeature(WebXRAnchorSystem, 'latest') as WebXRAnchorSystem;
+
+      if (anchorSystem) {
+
+        anchorSystem.onAnchorAddedObservable.add(webxranchor => {
+          let anchor: any = webxranchor;
+            if (item !== undefined) {
+              // anchor.attachedNode = item;
+            }
+        })
+
+        anchorSystem.onAnchorRemovedObservable.add(webxranchor => {
+            let anchor: any = webxranchor;
+            if (anchor) {
+                // anchor.attachedNode.dispose();
+            }
+        });
+      }
+
+      scene.onPointerDown = (evt, pickInfo) => {
+
+        if (hitTest && anchorSystem && xr.baseExperience.state === WebXRState.IN_XR) {
+          if (hitpoint) {
+          console.log("add hitpoint: " + hitpoint.position);
+          // anchorSystem.addAnchorPointUsingHitTestResultAsync(hitpoint);
+          if ((item !== undefined) && (item2 !== undefined) && (item3 !== undefined)) {
+
+            item.position.x = hitpoint.position.x;
+            item.position.y = hitpoint.position.y;
+            item.position.z = hitpoint.position.z; 
+            item.setEnabled(true);
+          }
+        }
+        }
+
+    }
+
   } catch (e) {
       // no XR support
       console.log('no WebXr support');
@@ -222,8 +294,6 @@ async function activateWebXR(scene: Scene) {
 }
 
 const BabylonView: FC = () => {
-
-  let item: AbstractMesh;
 
   const [xrScene, setXrScene] = useState<Scene>();
   const [xrEngine, setXrEngine] = useState<Engine>();
