@@ -2,6 +2,7 @@
   "name": "pwa-react-typescript",
   "version": "0.1.0",
   "private": true,
+  "homepage": "./",
   "dependencies": {
     "@babylonjs/core": "^5.43.1",
     "@babylonjs/gui": "^5.43.1",
