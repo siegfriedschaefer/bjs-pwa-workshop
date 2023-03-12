@@ -15,12 +15,14 @@ import {
   Mesh,
   PointLight,
   PolygonMeshBuilder,
+  PointerEventTypes,
   Scene,
   Space,
   StandardMaterial,
   FreeCamera,
   SceneLoader, 
-  ExtrudeShapeCustom
+  ExtrudeShapeCustom,
+  TransformNode
 } from '@babylonjs/core';
 
 import '@babylonjs/loaders/glTF';
@@ -49,6 +51,11 @@ let item: AbstractMesh | undefined;
 let item2: AbstractMesh | undefined;
 let item3: AbstractMesh | undefined;
 
+var itemState = 0;
+var itemRotation = 0.0;
+let pivot: TransformNode | undefined;
+//var cor = new Vector3(0,1,0);
+
 const loadmodel = async (scene: Scene) => {
 
   const model = await SceneLoader.ImportMeshAsync("", "https://bafybeibyoumttavsexltkqbcbkkae6rgm46a6mijdahzwp6yclkzeuecia.ipfs.nftstorage.link/","toolbox.glb" , scene);
@@ -58,11 +65,13 @@ const loadmodel = async (scene: Scene) => {
   // const model = await SceneLoader.ImportMeshAsync("", "https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/", "toolbox.glb", scene);
 
   item = model.meshes[0];
+  item.name = "Toolbox";
   item2 = model.meshes[1];
   item3 = model.meshes[2];
 
   item.setEnabled(false);
   item.scaling.scaleInPlace(0.2);
+
 
 //  model.meshes[0].setEnabled(false);
 //  model.meshes[1].setEnabled(false);
@@ -115,6 +124,7 @@ async function activateWebXR(scene: Scene) {
   var modelPlaced: boolean = false;
   var hitpoint : IWebXRHitResult ;
 
+
   const sessionManager = new WebXRSessionManager(scene);
   const supported = await sessionManager.isSessionSupportedAsync('immersive-ar');
   if (!supported) {
@@ -163,10 +173,12 @@ async function activateWebXR(scene: Scene) {
 
           if (placementIndicator) {
 
-            hitpoint = results[0];
-            let quat: Quaternion = placementIndicator.rotationQuaternion as Quaternion;
-            hitpoint.transformationMatrix.decompose(placementIndicator.scaling, quat, placementIndicator.position);
-            placementIndicator.position = results[0].position;
+            if (itemState == 0) {
+              hitpoint = results[0];
+              let quat: Quaternion = placementIndicator.rotationQuaternion as Quaternion;
+              hitpoint.transformationMatrix.decompose(placementIndicator.scaling, quat, placementIndicator.position);
+              placementIndicator.position = results[0].position;
+            }              
 /*
             modelPlaced = true;
             if (item !== undefined) {
@@ -183,6 +195,7 @@ async function activateWebXR(scene: Scene) {
         }
       });
 
+/*      
       const planeDetector = fm.enableFeature(WebXRPlaneDetector, "latest") as WebXRPlaneDetector;
       const planes: any[] = [];
 
@@ -255,6 +268,7 @@ async function activateWebXR(scene: Scene) {
             planes[plane.id].dispose()
         }
       })
+*/
 
       const anchorSystem = fm.enableFeature(WebXRAnchorSystem, 'latest') as WebXRAnchorSystem;
 
@@ -275,6 +289,19 @@ async function activateWebXR(scene: Scene) {
         });
       }
 
+      scene.onBeforeRenderObservable.add(() => {
+        if ((item !== undefined) && (item2 !== undefined) && (item3 !== undefined)) {
+          // var axis = new Vector3(0,0,1);
+
+//          item2.setPivotPoint(Vector3.Left());
+//          console.log("pivot: " + pivot);
+          if (item !== undefined) {
+            item.rotate(Vector3.Up(), (-Math.PI * itemRotation) / 150);
+          }
+        }
+      });
+
+
       scene.onPointerDown = (evt, pickInfo) => {
 
         if (hitTest && anchorSystem && xr.baseExperience.state === WebXRState.IN_XR) {
@@ -283,15 +310,57 @@ async function activateWebXR(scene: Scene) {
           // anchorSystem.addAnchorPointUsingHitTestResultAsync(hitpoint);
           if ((item !== undefined) && (item2 !== undefined) && (item3 !== undefined)) {
 
-            item.position.x = hitpoint.position.x;
-            item.position.y = hitpoint.position.y;
-            item.position.z = hitpoint.position.z; 
-            item.setEnabled(true);
+            if (itemState === 0) {
+
+              item.position.x = hitpoint.position.x;
+              item.position.y = hitpoint.position.y;
+              item.position.z = hitpoint.position.z; 
+              item.setEnabled(true);
+
+              /*
+              pivot = new TransformNode("lid2");
+              pivot.position = item.position;
+              item.parent = pivot;
+              */
+              itemState = 1;
+            }
           }
         }
-        }
-
+      }
     }
+
+    scene.onPointerObservable.add((pointerInfo) => {
+      console.log("pointerInfo: ", pointerInfo.type);
+        if (itemState === 1) {
+          switch (pointerInfo.type) {
+              case PointerEventTypes.POINTERDOWN:
+                {
+                  var pickResult = pointerInfo.pickInfo;
+                  if (pickResult != null) {
+                    if (pickResult.hit) {
+                      var pickedMesh = pickResult.pickedMesh;
+                      if (pickedMesh != null) {
+                        if ((pickedMesh.name === "base") || (pickedMesh.name === "Lid")) {
+                          if (itemRotation === 0) {
+                            itemRotation = 1.0;
+                          } else {
+                            itemRotation = 0.0;
+                            itemState = 0;
+                          }
+                          break;
+                        }
+                      }
+                    }
+                  }
+                  break;
+                }
+              case PointerEventTypes.POINTERPICK:
+              break;
+          }
+        }
+    });
+
+
 
   } catch (e) {
       // no XR support
