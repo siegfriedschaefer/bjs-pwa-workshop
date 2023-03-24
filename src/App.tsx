@@ -124,20 +124,9 @@ async function activateWebXR(scene: Scene) {
   var modelPlaced: boolean = false;
   var hitpoint : IWebXRHitResult ;
 
-  // record state of Microphone permission
-  let micPermission: boolean = false;
+/*
   // record state of AudioMediaStream
   let audioStream: MediaStream | undefined = undefined;
-
-
-  // try to get Microphone permission
-  function getMicPermission() {
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
-      micPermission = true;
-    }).catch(() => {
-      micPermission = false;
-    });
-  }
 
   // try to get am AudioMediaStream for recording
   function getAudioStream() {
@@ -166,6 +155,7 @@ async function activateWebXR(scene: Scene) {
       console.log('no audio stream');
     }
   }
+*/
   
     const sessionManager = new WebXRSessionManager(scene);
   const supported = await sessionManager.isSessionSupportedAsync('immersive-ar');
@@ -191,7 +181,7 @@ async function activateWebXR(scene: Scene) {
 
       // var xrSession = xr.baseExperience.sessionManager;
 
-      getAudioStream();
+      // getAudioStream();
 
       const fm = xr.baseExperience.featuresManager;
 
@@ -386,7 +376,7 @@ async function activateWebXR(scene: Scene) {
                       if (pickedMesh != null) {
                         if ((pickedMesh.name === "base") || (pickedMesh.name === "Lid")) {
                           if (itemRotation === 0) {
-                            recordAudio();
+//                             recordAudio();
                             itemRotation = 1.0;
                           } else {
                             itemRotation = 0.0;
