@@ -9,7 +9,9 @@ import {
   AbstractMesh,
   Axis,
   Color3,
+  DynamicTexture,
   Engine,
+  GlowLayer,
   HemisphericLight,
   MeshBuilder,
   Mesh,
@@ -22,6 +24,7 @@ import {
   FreeCamera,
   SceneLoader, 
   ExtrudeShapeCustom,
+  Texture,
   TransformNode
 } from '@babylonjs/core';
 
@@ -51,6 +54,9 @@ let item: AbstractMesh | undefined;
 let item2: AbstractMesh | undefined;
 let item3: AbstractMesh | undefined;
 
+let texture: Texture[] | undefined;
+let mat: StandardMaterial | undefined;
+
 var itemState = 0;
 var itemRotation = 0.0;
 let pivot: TransformNode | undefined;
@@ -58,19 +64,81 @@ let pivot: TransformNode | undefined;
 
 const loadmodel = async (scene: Scene) => {
 
-  const model = await SceneLoader.ImportMeshAsync("", "https://bafybeibyoumttavsexltkqbcbkkae6rgm46a6mijdahzwp6yclkzeuecia.ipfs.nftstorage.link/","toolbox.glb" , scene);
+  // const model = await SceneLoader.ImportMeshAsync("", "https://bafybeibyoumttavsexltkqbcbkkae6rgm46a6mijdahzwp6yclkzeuecia.ipfs.nftstorage.link/","toolbox.glb" , scene);
 
   // const model = await SceneLoader.ImportMeshAsync("", "https://nftstorage.link/ipfs/bafybeibyoumttavsexltkqbcbkkae6rgm46a6mijdahzwp6yclkzeuecia/","toolbox.glb" , scene);
   //  const model = await SceneLoader.ImportMeshAsync("", "https://gateway.pinata.cloud/ipfs/QmSmaEnrPWZoos4SH9btG2xe3osrgMwmyac4h2n7xcWeNa/","toolbox.glb" , scene);
-  // const model = await SceneLoader.ImportMeshAsync("", "https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/", "toolbox.glb", scene);
+  const model = await SceneLoader.ImportMeshAsync("", "https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/", "egg_uvsphere_tile.glb", scene);
 
-  item = model.meshes[0];
-  item.name = "Toolbox";
+  item = model.meshes[1];
+
+  var tex1 = new Texture(
+    'https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/ld_easteregg_texture_001.jpeg',
+    scene,
+    undefined,
+    false,
+    undefined,
+    () => console.log('Yay!'),
+    () => console.error('error!'),
+    // img
+  );
+var tex2 = new Texture(
+  'https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/ld_easteregg_texture_002.jpeg',
+  scene,
+  undefined,
+  false,
+  undefined,
+  () => console.log('Yay!'),
+  () => console.error('error!'),
+  // img
+);var tex3 = new Texture(
+  'https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/ld_easteregg_texture_003.jpeg',
+  scene,
+  undefined,
+  false,
+  undefined,
+  () => console.log('Yay!'),
+  () => console.error('error!'),
+  // img
+);var tex4 = new Texture(
+  'https://siegfriedschaefer.github.io/rn-babylonjs-pg/assets/ld_easteregg_texture_004.jpeg',
+  scene,
+  undefined,
+  false,
+  undefined,
+  () => console.log('Yay!'),
+  () => console.error('error!'),
+  // img
+);
+
+texture = [tex1, tex2, tex3, tex4];
+
+/*
+  const myDynamicTexture = new DynamicTexture("tex1", {width:1024, height:1024}, scene);
+  const myMaterial = new StandardMaterial("Mat", scene);
+  // myMaterial.diffuseColor = new Color3(0,1,0); // geht
+  myMaterial.diffuseTexture = myDynamicTexture;
+  // myMaterial.backFaceCulling = false;
+
+  myDynamicTexture.drawText("Hello World", 100, 100, "bold 100px verdana", "red", "white", false, true);
+  myDynamicTexture.drawText("Hello World", 200, 200, "bold 100px verdana", "red", "white", false, true);
+  myDynamicTexture.drawText("Hello World", 400, 300, "bold 100px verdana", "red", "white", false, true);
+  myDynamicTexture.drawText("Hello World", 500, 500, "bold 100px verdana", "red", "white", false, true);
+  myDynamicTexture.update();
+  item.material = myMaterial;
+
+*/
+
+mat = new StandardMaterial('mat', scene);
+mat.diffuseTexture = tex1;
+mat.emissiveTexture = tex1;
+
+  // item.name = "Toolbox";
   item2 = model.meshes[1];
-  item3 = model.meshes[2];
+//  item3 = model.meshes[2];
 
   item.setEnabled(false);
-  item.scaling.scaleInPlace(0.2);
+  item.scaling.scaleInPlace(0.3);
 
 
 //  model.meshes[0].setEnabled(false);
@@ -118,9 +186,17 @@ function createScene(engine: Engine, canvas: HTMLCanvasElement) :  Scene  {
 
 };
 
+// Constructs a GUI
+function buildGUI(scene: Scene) {
+/*
+  var plane = Mesh.CreatePlane("Plane", 0.5, scene);
+  var advancedTexture = GUI.AdvancedDynamicTexture.CreateForMesh(plane);
+*/
+}
+
 async function activateWebXR(scene: Scene) {
 
-  let placementIndicator: AbstractMesh;
+  let placementIndicator: Mesh;
   var modelPlaced: boolean = false;
   var hitpoint : IWebXRHitResult ;
 
@@ -156,7 +232,19 @@ async function activateWebXR(scene: Scene) {
     }
   }
 */
-  
+  // use SpeechRecognition API to recognize speech  
+  function recogniceSpeech()
+  {
+/*
+    var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
+    var recognition = new webkitSpeechRecognition();
+recognition.continuous = false;
+recognition.interimResults = true;
+recognition.lang = 'en';
+
+recognition.start();
+*/
+  }  
     const sessionManager = new WebXRSessionManager(scene);
   const supported = await sessionManager.isSessionSupportedAsync('immersive-ar');
   if (!supported) {
@@ -179,9 +267,14 @@ async function activateWebXR(scene: Scene) {
       // wired rendering effects like unusual, but happening when loading before the setup, black box effects.
       loadmodel(scene);
 
+      buildGUI(scene);
+
       // var xrSession = xr.baseExperience.sessionManager;
 
       // getAudioStream();
+
+      // var gl = new GlowLayer("glow", scene);
+
 
       const fm = xr.baseExperience.featuresManager;
 
@@ -195,6 +288,8 @@ async function activateWebXR(scene: Scene) {
       placementIndicator.scaling = new Vector3(1, 0.01, 1);
       placementIndicator.setEnabled(false);
 
+//      gl.addExcludedMesh(placementIndicator);
+
       hitTest.onHitTestResultObservable.add((results) => {
         if (results.length) {
           if (!modelPlaced) {
@@ -207,7 +302,7 @@ async function activateWebXR(scene: Scene) {
 
           if (placementIndicator) {
 
-            if (itemState == 0) {
+            if (itemState === 0) {
               hitpoint = results[0];
               let quat: Quaternion = placementIndicator.rotationQuaternion as Quaternion;
               hitpoint.transformationMatrix.decompose(placementIndicator.scaling, quat, placementIndicator.position);
@@ -323,14 +418,21 @@ async function activateWebXR(scene: Scene) {
         });
       }
 
+      let t = 0;
+
       scene.onBeforeRenderObservable.add(() => {
-        if ((item !== undefined) && (item2 !== undefined) && (item3 !== undefined)) {
+        if ((item !== undefined) /* && (item2 !== undefined) && (item3 !== undefined) */ ) {
           // var axis = new Vector3(0,0,1);
 
 //          item2.setPivotPoint(Vector3.Left());
 //          console.log("pivot: " + pivot);
           if (item !== undefined) {
+/*
+            t += 0.1;
+            gl.intensity = Math.cos(t) * 0.5 + 0.2;
+*/
             item.rotate(Vector3.Up(), (-Math.PI * itemRotation) / 150);
+
           }
         }
       });
@@ -340,9 +442,9 @@ async function activateWebXR(scene: Scene) {
 
         if (hitTest && anchorSystem && xr.baseExperience.state === WebXRState.IN_XR) {
           if (hitpoint) {
-          console.log("add hitpoint: " + hitpoint.position);
           // anchorSystem.addAnchorPointUsingHitTestResultAsync(hitpoint);
-          if ((item !== undefined) && (item2 !== undefined) && (item3 !== undefined)) {
+          if ((item !== undefined) /* && (item2 !== undefined) && (item3 !== undefined) */) {
+            console.log("add hitpoint: " + hitpoint.position);
 
             if (itemState === 0) {
 
@@ -363,6 +465,8 @@ async function activateWebXR(scene: Scene) {
       }
     }
 
+    var matindex = 0;
+
     scene.onPointerObservable.add((pointerInfo) => {
       console.log("pointerInfo: ", pointerInfo.type);
         if (itemState === 1) {
@@ -374,10 +478,39 @@ async function activateWebXR(scene: Scene) {
                     if (pickResult.hit) {
                       var pickedMesh = pickResult.pickedMesh;
                       if (pickedMesh != null) {
-                        if ((pickedMesh.name === "base") || (pickedMesh.name === "Lid")) {
+                        if ((pickedMesh.name === "base") || (pickedMesh.name === "Lid") || (pickedMesh.name === "Egg.001") || (pickedMesh.name === "Sphere")) {
                           if (itemRotation === 0) {
 //                             recordAudio();
                             itemRotation = 1.0;
+                            if (matindex === 0) {
+                              if ((texture !== undefined) && (mat !== undefined)) {
+                                mat.emissiveTexture = texture[0];
+                                mat.diffuseTexture = texture[0];
+                              }
+                              matindex = 1;
+                            } else if (matindex === 1) {
+                              if ((texture !== undefined) && (mat !== undefined)) {
+                                mat.emissiveTexture = texture[1];
+                                mat.diffuseTexture = texture[1];
+                              }
+                              matindex = 2;
+                            } else if (matindex === 2) {
+                              if ((texture !== undefined) && (mat !== undefined)) {
+                                mat.emissiveTexture = texture[2];
+                                mat.diffuseTexture = texture[2];
+                              }
+                              matindex = 3;
+                            } else if (matindex === 3) {
+                              if ((texture !== undefined) && (mat !== undefined)) {
+                                mat.emissiveTexture = texture[3];
+                                mat.diffuseTexture = texture[3];
+                              }
+                              matindex = 0
+                            }
+                            if (item !== undefined) {
+                              item.material = mat as StandardMaterial;
+                            }
+
                           } else {
                             itemRotation = 0.0;
                             itemState = 0;
