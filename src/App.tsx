@@ -175,7 +175,7 @@ async function activateWebXR(scene: Scene) {
         return;
       }
 
-      // Loading the model after setting up the XR-Experience helps to get rif of some
+      // Loading the model after setting up the XR-Experience helps to get rid of some
       // wired rendering effects like unusual, but happening when loading before the setup, black box effects.
       loadmodel(scene);
 
@@ -229,80 +229,6 @@ async function activateWebXR(scene: Scene) {
         }
       });
 
-/*      
-      const planeDetector = fm.enableFeature(WebXRPlaneDetector, "latest") as WebXRPlaneDetector;
-      const planes: any[] = [];
-
-      planeDetector.onPlaneUpdatedObservable.add(webXRPlane => {
-
-        // we have to transform the plane's type because of typescript complaining if not
-        let plane : any = webXRPlane;
-        if (plane.mesh) {
-            plane.mesh.dispose(false, false);
-        }
-
-        const some = plane.polygonDefinition.some((p: any) => !p);
-        if (some) {
-            return;
-        }
-
-        plane.polygonDefinition.push(plane.polygonDefinition[0]);
-        try {
-          plane.mesh = MeshBuilder.CreatePolygon("plane", { shape : plane.polygonDefinition }, scene, earcut);
-          let tubeMesh : Mesh =  MeshBuilder.CreateTube("tube", { path: plane.polygonDefinition, radius: 0.005, sideOrientation: Mesh.FRONTSIDE, updatable: true }, scene);
-          tubeMesh.setParent(plane.mesh);
-          planes[plane.id] = (plane.mesh);
-
-          const mat = new StandardMaterial("mat", scene);
-          mat.alpha = 0.5;
-          mat.diffuseColor = Color3.Random();
-
-
-          plane.mesh.material = mat;
-          plane.mesh.rotationQuaternion = new Quaternion();
-          plane.transformationMatrix.decompose(plane.mesh.scaling, plane.mesh.rotationQuaternion, plane.mesh.position);
-          plane.mesh.receiveShadows = true;
-        }
-        catch (ex)
-        {
-          console.error(ex);
-        }
-      });
-
-      planeDetector.onPlaneAddedObservable.add(webxrplane => {
-
-        // we have to transform the plane's type because of typescript complaining if not
-        let plane: any = webxrplane;
-
-        webxrplane.polygonDefinition.push(webxrplane.polygonDefinition[0]);
-
-        try {
-          plane.mesh = MeshBuilder.CreatePolygon("plane", { shape : plane.polygonDefinition }, scene, earcut);
-          let tubeMesh : Mesh =  MeshBuilder.CreateTube("tube", { path: plane.polygonDefinition, radius: 0.005, sideOrientation: Mesh.FRONTSIDE, updatable: true }, scene);
-          tubeMesh.setParent(plane.mesh);
-          planes[plane.id] = (plane.mesh);
-
-          const mat = new StandardMaterial("mat", scene);
-          mat.alpha = 0.5;
-          mat.diffuseColor = Color3.Random();
-
-          plane.mesh.material = mat;
-
-          plane.mesh.rotationQuaternion = new Quaternion();
-          plane.transformationMatrix.decompose(plane.mesh.scaling, plane.mesh.rotationQuaternion, plane.mesh.position);
-        }
-        catch (ex)
-        {
-          console.error(ex);
-        }
-      });
-      
-      planeDetector.onPlaneRemovedObservable.add(plane => {
-        if (plane && planes[plane.id]) {
-            planes[plane.id].dispose()
-        }
-      })
-*/
 
       const anchorSystem = fm.enableFeature(WebXRAnchorSystem, 'latest') as WebXRAnchorSystem;
 
